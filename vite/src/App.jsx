@@ -1,50 +1,63 @@
-import { ethers } from "ethers";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import MetamaskButton from "./components/MetamaskButton";
+import Erc20Connect from "./components/Erc20Connect";
+import Balance from "./components/Balance";
+import Transfer from "./components/Transfer";
+
 
 const App = () => {
-
   const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+  const [name, setName] = useState();
+  const [symbol, setSymbol] = useState();
+  const [balance, setBalance] = useState(null);
 
-  const onClickMetamask = async () => {
+
+  const getNameSymbol = async () => {
     try {
-      if (!window.ethereum) return;
+      const nameResponse = await contract.name();
+      const symbolResponse = await contract.symbol();
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
-
-      setSigner(await provider.getSigner());
-
+      setName(nameResponse);
+      setSymbol(symbolResponse);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const onClickLogOut = () => {
-    setSigner(null);
-  };
+  
 
   useEffect(() => {
-    console.log(signer);
-  }, [signer]);
+    if (!contract) return;
+
+    getNameSymbol();
+  }, [contract]);
 
   return (
     <div className="min-h-screen flex flex-col justify-start items-center py-16">
-       {signer ? (
-        <div className="flex gap-8">
-          <div className="box-style">
-            안녕하세요, {signer.address.substring(0, 7)}...
-            {signer.address.substring(signer.address.length - 5)}님
+      <MetamaskButton signer={signer} setSigner={setSigner} />
+      {signer && (
+        <div className="mt-16 flex flex-col gap-8 grow max-w-xl w-full">
+          <div className="box-style text-center">
+          컨트랙트 주소 : 0x5Ccf74011eCc5474d093400979eE3f70D02e8288
           </div>
-          <button
-            className="button-style border-red-300 hover:border-red-400"
-            onClick={onClickLogOut}
-          >
-            로그아웃
-          </button>
+          <div className="box-style text-center">
+          지갑 주소 : 0x8A85E6aF1c3e391C83374b1Be5A7669dF32A3559
+          </div>
+          <Erc20Connect name={name} signer={signer} setContract={setContract} />
+          {name && (
+            <>
+            <Balance
+              name={name}
+              symbol={symbol}
+              contract={contract}
+              balance={balance}
+              setBalance={setBalance}
+            />
+            <Transfer name={name} symbol={symbol} contract={contract} />
+          </>
+          )}
         </div>
-      ) : (
-        <button className="button-style" onClick={onClickMetamask}>
-          🦊 메타마스크 로그인
-        </button>
       )}
     </div>
   );
